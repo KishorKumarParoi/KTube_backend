@@ -16,3 +16,5 @@ const upload = multer(
         storage,
     }
 )
+
+export { upload }
