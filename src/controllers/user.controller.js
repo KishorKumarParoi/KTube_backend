@@ -16,22 +16,24 @@ const registerUser = asyncHandler(async (req, res) => {
     // 8. check for user creation
     // 9. return the response
 
-    res.status(200).json({
-        success: true,
-        message: "User registered successfully"
-    })
+    // res.status(200).json({
+    //     success: true,
+    //     message: "User registered successfully"
+    // })
 
-    const { email, password } = req.body;
-    console.log(email, password);
+    const { fullname, username, email, password } = req.body;
+    // console.log(email, password);
+
+    console.log(req.body);
 
     if (
-        [fullname, email, password, username].some((field) => field?.trim() === "")
+        [email, username, password, fullname].some((field) => field?.trim() === "")
     ) {
         throw new ApiError(400, "All fields are required")
     }
 
-    const existedUser = User.findOne({
-        $or: [{ email }, { username }, { phone }],
+    const existedUser = await User.findOne({
+        $or: [{ email }, { username }],
     });
 
     if (existedUser) {
@@ -47,6 +49,8 @@ const registerUser = asyncHandler(async (req, res) => {
 
     const avatar = await uploadOnCloudinary(avatarFilePath);
     const coverImage = await uploadOnCloudinary(coverImageFilePath);
+
+    console.log(avatar, coverImage);
 
     if (!avatar) {
         throw new ApiError(400, "Avatar upload failed")
