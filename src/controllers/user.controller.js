@@ -270,5 +270,31 @@ const getCurrentUser = asyncHandler(async (req, res) => {
         )
 })
 
-export { changeCurrentPassword, getCurrentUser, loginUser, logoutUser, refreshAccessToken, registerUser };
+const updateAccountDetails = asyncHandler(async (req, res) => {
+    const { fullname, username, email } = req.body;
+    console.log(req.body);
+    console.log(req.user);
+
+    if (!fullname && !username && !email) {
+        throw new ApiError(401, "At least one Field is required");
+    }
+
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {
+            $set: {
+                fullname,
+                email,
+                username
+            }
+        },
+        { new: true }
+    ).select("-password -refreshToken");
+
+    return res
+        .status(200)
+        .json(new ApiResponse(200, user, "Account details updated successfully"))
+})
+
+export { changeCurrentPassword, getCurrentUser, loginUser, logoutUser, refreshAccessToken, registerUser, updateAccountDetails };
 
