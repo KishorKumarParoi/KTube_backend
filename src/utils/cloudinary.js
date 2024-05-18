@@ -1,6 +1,7 @@
 import { v2 as cloudinary } from 'cloudinary';
 import dotenv from 'dotenv';
 import fs from 'fs';
+import { ApiError } from '../utils/ApiError.js';
 
 dotenv.config({
     path: './.env'
@@ -28,11 +29,18 @@ console.log("Cloudinary config: ", process.env.CLOUD_NAME, process.env.CLOUD_API
 
 const uploadOnCloudinary = async (localFilePath) => {
     try {
-        if (!localFilePath) return null;
+        if (!localFilePath) {
+            console.log("No File Path Provided");
+            return null
+        }
+
         // upload the file on cloudinary
-        const response = await cloudinary.uploader.upload(localFilePath, {
-            resource_type: "auto",
-        })
+        const response = await cloudinary.uploader.upload(localFilePath,
+            {
+                resource_type: "auto",
+                folder: "ktube-image"
+            }
+        )
 
         // file has been uploaded successfully
         console.log("File uploaded successfully on ", response.url);
@@ -43,7 +51,26 @@ const uploadOnCloudinary = async (localFilePath) => {
         fs.unlinkSync(localFilePath);
         // removed the locally saved temporary file as the upload operation got failed
         console.error("Error in uploading file on cloudinary: ", error);
-        return null;
+        throw new ApiError(500, error?.message || "Server error");
+    }
+}
+
+const deleteOldImageOnCloudinary = async (oldImageUrl, publicId) => {
+    try {
+        if (!oldImageUrl || !publicId) {
+            throw new ApiError(404, "OldImageUrl or PublicId required");
+        }
+
+        const result = await cloudinary.uploader.destroy(
+            publicId,
+            {
+                resource_type: `${oldImageUrl.includes("image") ? "image" : "video"}`
+            }
+        )
+        console.log("Asset deleted from Cloudinary:", result);
+    } catch (error) {
+        console.error("Error deleting asset from Cloudinary:", error);
+        throw new ApiError(500, error?.message || "Server error");
     }
 }
 
@@ -82,4 +109,5 @@ const uploadOnCloudinary = async (localFilePath) => {
 //     console.log(autoCropUrl);
 // });
 
-export { uploadOnCloudinary };
+export { deleteOldImageOnCloudinary, uploadOnCloudinary };
+
